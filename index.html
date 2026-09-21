@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <title>내시.#316</title>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon.png">
@@ -96,6 +96,9 @@
     form[data-col] { grid-template-columns:repeat(2, minmax(0, 1fr)); gap:8px 10px; }
     form[data-col] label { min-width:0; }
     form[data-col] input:not([type=checkbox]), form[data-col] select, form[data-col] textarea { width:100%; min-width:0; }
+    /* 날짜칸: iOS 기본 크기가 커서 옆칸과 겹치므로 글자 축소 + 폭 고정 */
+    form[data-col] input[type=date] { font-size:14px; -webkit-appearance:none; appearance:none; min-height:36px; display:block; }
+    form[data-col] input[type=date]::-webkit-date-and-time-value { text-align:left; }
   }
 </style>
 </head>
@@ -170,9 +173,11 @@
   <form data-col="trips">
     <input type="hidden" name="id">
     <label class="wide">출장명<input name="name" required></label>
+    <label>시작일<input type="date" name="date__d" required></label>
+    <label>시작 시간<select name="date__t" data-default="09:00"></select></label>
+    <label>종료일<input type="date" name="dateEnd__d" required></label>
+    <label>종료 시간<select name="dateEnd__t" data-default="18:00"></select></label>
     <label>해당과제<select name="projectId" id="projectSelect"></select></label>
-    <label>시작 일시<input type="datetime-local" name="date" required></label>
-    <label>종료 일시<input type="datetime-local" name="dateEnd" required></label>
     <label>대상<input name="target"></label>
     <label>장소<input name="place"></label>
     <label>진행단계<select name="step"><option value="0">출장신청</option><option value="1">출장보고</option><option value="2">지급결의서</option><option value="3">완료</option></select></label>
@@ -444,15 +449,22 @@ function edit(col, id) {
   const f = document.querySelector(`form[data-col="${col}"]`), x = find(col, id);
   for (const el of f.elements) {
     if (!el.name) continue;
+    const base = x[el.name.slice(0, -3)] || ''; // 날짜/시간 분리칸(__d, __t)은 'YYYY-MM-DDTHH:MM' 값에서 채움
     if (el.type === 'checkbox') el.checked = !!x[el.name];
+    else if (el.name.endsWith('__d')) el.value = base.slice(0, 10);
+    else if (el.name.endsWith('__t')) el.value = (base.slice(11, 15) || el.dataset.default.slice(0, 4)) + '0';
     else el.value = x[el.name] ?? '';
   }
-  f.elements.namedItem('date').dispatchEvent(new Event('change')); // 종료일 없는 기존 데이터는 시작일로 채움
+  dateEl(f, 'date').dispatchEvent(new Event('change')); // 종료일 없는 기존 데이터는 시작일로 채움
   f.scrollIntoView({ behavior: 'smooth' });
 }
+// 시간 선택: 10분 단위 (iOS는 input step을 무시하므로 select 사용)
+const TIMES = Array.from({ length: 144 }, (_, i) => `${String(i / 6 | 0).padStart(2, '0')}:${i % 6}0`);
+document.querySelectorAll('select[name$="__t"]').forEach(s => { s.innerHTML = TIMES.map(t => `<option${t === s.dataset.default ? ' selected' : ''}>${t}</option>`).join(''); });
+const dateEl = (f, k) => f.elements.namedItem(k) || f.elements.namedItem(k + '__d');
 document.querySelectorAll('form[data-col]').forEach(f => {
   f.addEventListener('reset', () => { f.elements.namedItem('id').value = ''; });
-  const start = f.elements.namedItem('date'), end = f.elements.namedItem('dateEnd');
+  const start = dateEl(f, 'date'), end = dateEl(f, 'dateEnd');
   if (end) start.addEventListener('change', () => { end.min = start.value; if (!end.value || end.value < start.value) end.value = start.value; });
   f.addEventListener('submit', e => {
     e.preventDefault();
@@ -461,6 +473,8 @@ document.querySelectorAll('form[data-col]').forEach(f => {
       if (!el.name) continue;
       o[el.name] = el.type === 'checkbox' ? el.checked : (el.type === 'number' || el.name === 'step') ? Number(el.value || 0) : el.value;
     }
+    for (const k of Object.keys(o)) if (k.endsWith('__d')) { const b = k.slice(0, -3); o[b] = o[k] + 'T' + o[b + '__t']; delete o[k]; delete o[b + '__t']; }
+    if (o.dateEnd && o.dateEnd < o.date) return alert('종료가 시작보다 빠릅니다.');
     if (o.id) Object.assign(find(col, o.id), o);
     else {
       o.id = uid();
