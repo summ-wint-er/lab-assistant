@@ -77,11 +77,25 @@
   body[data-auth] #loading { display:none; }
   @media (max-width:600px) {
     header { padding-left:12px; padding-right:12px; gap:8px; }
+    #logout { margin-left:auto; }
+    nav { order:3; flex-basis:100%; justify-content:space-between; scrollbar-width:none; } /* 탭은 둘째 줄 전체 폭 */
+    nav::-webkit-scrollbar { display:none; }
+    nav button { padding:6px 8px; }
     main { padding:12px; }
     input, select, textarea { font-size:16px; } /* iOS 입력 시 자동 확대 방지 */
     .badge { padding:6px 10px; }
     .cal > div { min-height:60px; padding:2px 1px; }
     .ev { font-size:9px; padding:0 2px; }
+    /* 표: 칸을 억지로 좁히지 않고 옆으로 밀어서 보기, 첫 칸은 고정 */
+    .tw table { width:max-content; min-width:100%; }
+    .tw th { white-space:nowrap; }
+    .tw td { min-width:70px; max-width:220px; }
+    .tw th:first-child, .tw td:first-child { position:sticky; left:0; background:var(--card); box-shadow:1px 0 0 var(--line); max-width:140px; }
+    .tw th:first-child { background:#fafbfc; }
+    /* 등록 폼 2열 */
+    form[data-col] { grid-template-columns:repeat(2, minmax(0, 1fr)); gap:8px 10px; }
+    form[data-col] label { min-width:0; }
+    form[data-col] input:not([type=checkbox]), form[data-col] select, form[data-col] textarea { width:100%; min-width:0; }
   }
 </style>
 </head>
