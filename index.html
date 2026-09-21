@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>연구실 비서</title>
+<title>내시.#316</title>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="연구실 비서">
+<meta name="apple-mobile-web-app-title" content="내시.#316">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#1f2a44">
 <style>
@@ -87,7 +87,7 @@
 </head>
 <body>
 <header>
-  <h1>연구실 비서</h1>
+  <h1>내시.#316</h1>
   <nav>
     <button data-tab="dash" class="on">대시보드</button>
     <button data-tab="projects">연구과제</button>
@@ -157,7 +157,8 @@
     <input type="hidden" name="id">
     <label class="wide">출장명<input name="name" required></label>
     <label>해당과제<select name="projectId" id="projectSelect"></select></label>
-    <label>일시<input type="datetime-local" name="date" required></label>
+    <label>시작 일시<input type="datetime-local" name="date" required></label>
+    <label>종료 일시<input type="datetime-local" name="dateEnd" required></label>
     <label>대상<input name="target"></label>
     <label>장소<input name="place"></label>
     <label>진행단계<select name="step"><option value="0">출장신청</option><option value="1">출장보고</option><option value="2">지급결의서</option><option value="3">완료</option></select></label>
@@ -173,7 +174,8 @@
   <form data-col="activities">
     <input type="hidden" name="id">
     <label class="wide">활동명<input name="name" required></label>
-    <label>일자<input type="date" name="date" required></label>
+    <label>시작일<input type="date" name="date" required></label>
+    <label>종료일<input type="date" name="dateEnd" required></label>
     <label>방식<select name="mode"><option>대면</option><option>서면</option></select></label>
     <label>기관<select name="org"><option>국가지자체</option><option>공공기관등</option></select></label>
     <label>유형<select name="kind"><option>자문</option><option>심의</option><option>발표</option><option>토론</option><option>기타</option></select></label>
@@ -231,16 +233,25 @@ function actStats(acts, today) {
   }
   return s;
 }
+// 시작~종료 사이의 모든 날짜 (종료 없으면 시작일 하루)
+function daysIn(start, end) {
+  const out = [], d = new Date(start.slice(0, 10) + 'T00:00'), e = new Date(((end || '') > start ? end : start).slice(0, 10) + 'T00:00');
+  while (d <= e && out.length < 366) { out.push(todayStr(d)); d.setDate(d.getDate() + 1); }
+  return out;
+}
 // 달력에 표시할 모든 일정 (완료 건 포함, 완료는 흐리게)
 function calEvents(db) {
   return [
-    ...db.trips.map(t => ({ date: t.date.slice(0, 10), kind: '출장', cls: 'trip', text: t.name, done: t.step >= 3 })),
-    ...db.activities.map(a => ({ date: a.date, kind: '외부활동', cls: 'act', text: a.name, done: a.step >= 3 })),
+    ...db.trips.flatMap(t => daysIn(t.date, t.dateEnd).map(date => ({ date, kind: '출장', cls: 'trip', text: t.name, done: t.step >= 3 }))),
+    ...db.activities.flatMap(a => daysIn(a.date, a.dateEnd).map(date => ({ date, kind: '외부활동', cls: 'act', text: a.name, done: a.step >= 3 }))),
     ...db.schedules.map(x => ({ date: x.date, kind: x.urgent ? '긴급일정' : '일정', cls: x.urgent ? 'urg' : 'sch', text: x.name, done: x.done })),
     ...db.projects.map(p => ({ date: p.end, kind: '과제종료', cls: 'end', text: p.name, done: p.finalDone })),
   ].sort((a, b) => a.done - b.done);
 }
 function selfTest() {
+  console.assert(daysIn('2026-09-29T10:00', '2026-10-02T12:00').join() === '2026-09-29,2026-09-30,2026-10-01,2026-10-02');
+  console.assert(daysIn('2026-09-29', undefined).join() === '2026-09-29');
+  console.assert(daysIn('2026-09-29', '2026-09-20').join() === '2026-09-29');
   const ev = calEvents({ trips: [{ date: '2026-09-25T10:00', name: 'T', step: 3 }], activities: [], schedules: [{ date: '2026-09-25', name: 'S', urgent: true, done: false }], projects: [] });
   console.assert(ev.length === 2 && ev[0].text === 'S' && ev[0].cls === 'urg' && ev[1].date === '2026-09-25' && ev[1].done);
   console.assert(dday('2026-10-21', '2026-09-21') === 30);
@@ -266,7 +277,7 @@ function save() {
   render();
 }
 async function backup() {
-  const file = new File([JSON.stringify(DB, null, 1)], `연구실비서-백업-${todayStr()}.json`, { type: 'application/json' });
+  const file = new File([JSON.stringify(DB, null, 1)], `내시316-백업-${todayStr()}.json`, { type: 'application/json' });
   if (navigator.canShare?.({ files: [file] })) return navigator.share({ files: [file] }).catch(() => {});
   const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(file), download: file.name });
   a.click();
@@ -291,6 +302,7 @@ const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 
 const find = (col, id) => DB[col].find(x => x.id === id);
 const projName = id => (find('projects', id) || {}).name || '-';
 const empty = msg => `<div class="empty">${msg}</div>`;
+const period = x => fmtDate(x.date) + (x.dateEnd && x.dateEnd !== x.date ? ' ~ ' + fmtDate(x.dateEnd.slice(0, 10) === x.date.slice(0, 10) ? x.dateEnd.slice(11) : x.dateEnd) : '');
 const byDate = (a, b) => (a.date || '').localeCompare(b.date || '');
 
 // ---------- 대시보드 액션 ----------
@@ -360,7 +372,7 @@ function render() {
   // 출장
   $('#d-trips').innerHTML = DB.trips.filter(t => t.step < 3).sort(byDate).map(t => `<div class="item">
       <div class="row"><span class="name">${esc(t.name)}</span><span class="tag">${esc(projName(t.projectId))}</span></div>
-      <div class="small">${fmtDate(t.date)} · ${esc(t.place)} · 대상: ${esc(t.target)}</div>
+      <div class="small">${period(t)} · ${esc(t.place)} · 대상: ${esc(t.target)}</div>
       ${t.content ? `<div class="small">${esc(t.content)}</div>` : ''}
       <div class="row" style="margin-top:6px">${stepBadge('trips', t, TRIP_STEPS)}</div>
     </div>`).join('') || empty('진행 중인 출장이 없습니다.');
@@ -371,7 +383,7 @@ function render() {
     <b>${today.slice(0, 4)}년 총 금액</b> ${won(s.amount)} &nbsp;|&nbsp; <b>교통비 합계</b> ${won(s.transport)}`;
   $('#d-activities').innerHTML = DB.activities.filter(a => a.step < 3).sort(byDate).map(a => `<div class="item">
       <div class="row">${icons(a)}<span class="name">${esc(a.name)}</span><span class="tag">${esc(a.kind)}</span><span class="tag">${esc(a.mode)}</span><span class="tag">${esc(a.org)}</span></div>
-      <div class="small">${esc(a.date)} · 금액 ${won(a.amount)} · 교통비 ${won(a.transport)}</div>
+      <div class="small">${period(a)} · 금액 ${won(a.amount)} · 교통비 ${won(a.transport)}</div>
       <div class="row" style="margin-top:6px">${stepBadge('activities', a, ACT_STEPS)}</div>
     </div>`).join('') || empty('진행 중인 외부활동이 없습니다.');
 
@@ -394,12 +406,12 @@ function render() {
       <div class="row" style="margin-top:4px"><input id="task-${p.id}" placeholder="주요업무 추가" onkeydown="if(event.key==='Enter')addTask('${p.id}')"><button class="s" onclick="addTask('${p.id}')">추가</button></div></td>
     ${acts('projects', p)}</tr>`));
 
-  $('#l-trips').innerHTML = table(['출장명', '해당과제', '일시', '대상', '장소', '주요내용', '단계'], [...DB.trips].sort(byDate).map(t => `<tr>
-    <td>${esc(t.name)}</td><td>${esc(projName(t.projectId))}</td><td>${fmtDate(t.date)}</td><td>${esc(t.target)}</td><td>${esc(t.place)}</td><td>${esc(t.content)}</td>
+  $('#l-trips').innerHTML = table(['출장명', '해당과제', '기간', '대상', '장소', '주요내용', '단계'], [...DB.trips].sort(byDate).map(t => `<tr>
+    <td>${esc(t.name)}</td><td>${esc(projName(t.projectId))}</td><td>${period(t)}</td><td>${esc(t.target)}</td><td>${esc(t.place)}</td><td>${esc(t.content)}</td>
     <td>${TRIP_STEPS[t.step] || '완료'}</td>${acts('trips', t)}</tr>`));
 
-  $('#l-activities').innerHTML = table(['활동명', '일자', '방식', '기관', '유형', '금액', '교통비', '단계'], [...DB.activities].sort(byDate).map(a => `<tr>
-    <td>${icons(a)}${esc(a.name)}</td><td>${esc(a.date)}</td><td>${esc(a.mode)}</td><td>${esc(a.org)}</td><td>${esc(a.kind)}</td><td>${won(a.amount)}</td><td>${won(a.transport)}</td>
+  $('#l-activities').innerHTML = table(['활동명', '기간', '방식', '기관', '유형', '금액', '교통비', '단계'], [...DB.activities].sort(byDate).map(a => `<tr>
+    <td>${icons(a)}${esc(a.name)}</td><td>${period(a)}</td><td>${esc(a.mode)}</td><td>${esc(a.org)}</td><td>${esc(a.kind)}</td><td>${won(a.amount)}</td><td>${won(a.transport)}</td>
     <td>${ACT_STEPS[a.step] || '완료'}</td>${acts('activities', a)}</tr>`));
 
   const schRow = x => `<tr><td>${x.urgent ? '<span class="urgent">[긴급]</span> ' : ''}${esc(x.name)}</td><td>${esc(x.date)}</td><td>${esc(x.target)}</td><td>${esc(x.content)}</td>`;
@@ -421,10 +433,13 @@ function edit(col, id) {
     if (el.type === 'checkbox') el.checked = !!x[el.name];
     else el.value = x[el.name] ?? '';
   }
+  f.elements.namedItem('date').dispatchEvent(new Event('change')); // 종료일 없는 기존 데이터는 시작일로 채움
   f.scrollIntoView({ behavior: 'smooth' });
 }
 document.querySelectorAll('form[data-col]').forEach(f => {
   f.addEventListener('reset', () => { f.elements.namedItem('id').value = ''; });
+  const start = f.elements.namedItem('date'), end = f.elements.namedItem('dateEnd');
+  if (end) start.addEventListener('change', () => { end.min = start.value; if (!end.value || end.value < start.value) end.value = start.value; });
   f.addEventListener('submit', e => {
     e.preventDefault();
     const col = f.dataset.col, o = {};
