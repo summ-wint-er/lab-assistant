@@ -13,8 +13,9 @@
 <style>
   :root { --bg:#f5f6f8; --card:#fff; --line:#e3e5e8; --text:#222; --sub:#777; --accent:#2f6fec; --warn:#e8590c; --red:#d6336c; }
   * { box-sizing:border-box; }
-  body { margin:0; font-family:-apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; background:var(--bg); color:var(--text); font-size:14px; }
-  header { background:#1f2a44; color:#fff; padding:12px 20px; padding-top:max(12px, env(safe-area-inset-top)); display:flex; gap:20px; align-items:center; flex-wrap:wrap; position:sticky; top:0; z-index:1; }
+  html { background:#1f2a44; } /* iOS 상태바 영역이 헤더와 같은 색으로 보이도록 */
+  body { margin:0; min-height:100vh; font-family:-apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; background:var(--bg); color:var(--text); font-size:14px; }
+  header { background:#1f2a44; color:#fff; padding:12px 20px; padding-top:calc(env(safe-area-inset-top) + 12px); display:flex; gap:20px; align-items:center; flex-wrap:wrap; position:sticky; top:0; z-index:1; }
   header h1 { font-size:18px; margin:0; }
   nav { display:flex; overflow-x:auto; flex:1; min-width:0; }
   nav button { background:none; border:0; color:#cfd6e6; font-size:14px; padding:6px 10px; cursor:pointer; border-radius:6px; white-space:nowrap; }
@@ -193,8 +194,10 @@
   <form data-col="activities">
     <input type="hidden" name="id">
     <label class="wide">활동명<input name="name" required></label>
-    <label>시작일<input type="date" name="date" required></label>
-    <label>종료일<input type="date" name="dateEnd" required></label>
+    <label>시작일<input type="date" name="date__d" required></label>
+    <label>시작 시간<select name="date__t" data-default="09:00"></select></label>
+    <label>종료일<input type="date" name="dateEnd__d" required></label>
+    <label>종료 시간<select name="dateEnd__t" data-default="18:00"></select></label>
     <label>방식<select name="mode"><option>대면</option><option>서면</option></select></label>
     <label>기관<select name="org"><option>국가지자체</option><option>공공기관등</option></select></label>
     <label>유형<select name="kind"><option>자문</option><option>심의</option><option>발표</option><option>토론</option><option>기타</option></select></label>
