@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>연구실 비서</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="연구실 비서">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1f2a44">
+<style>
+  :root { --bg:#f5f6f8; --card:#fff; --line:#e3e5e8; --text:#222; --sub:#777; --accent:#2f6fec; --warn:#e8590c; --red:#d6336c; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:-apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; background:var(--bg); color:var(--text); font-size:14px; }
+  header { background:#1f2a44; color:#fff; padding:12px 20px; padding-top:max(12px, env(safe-area-inset-top)); display:flex; gap:20px; align-items:center; flex-wrap:wrap; position:sticky; top:0; z-index:1; }
+  header h1 { font-size:18px; margin:0; }
+  nav { display:flex; overflow-x:auto; flex:1; min-width:0; }
+  nav button { background:none; border:0; color:#cfd6e6; font-size:14px; padding:6px 10px; cursor:pointer; border-radius:6px; white-space:nowrap; }
+  nav button.on { background:#3a4a70; color:#fff; }
+  main { padding:20px; padding-bottom:max(20px, env(safe-area-inset-bottom)); max-width:1300px; margin:auto; }
+  section { display:none; } section.on { display:block; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(min(420px, 100%), 1fr)); gap:16px; }
+  .grid .card { margin:0; }
+  .grid { margin-bottom:16px; }
+  .tw { overflow-x:auto; }
+  .cal { display:grid; grid-template-columns:repeat(7, minmax(0, 1fr)); border-top:1px solid var(--line); border-left:1px solid var(--line); margin-top:10px; }
+  .cal > div { min-height:88px; border-right:1px solid var(--line); border-bottom:1px solid var(--line); padding:3px; font-size:11px; cursor:pointer; }
+  .cal .dow { min-height:0; text-align:center; background:#fafbfc; font-weight:600; cursor:default; }
+  .cal .blank { background:#fafbfc; cursor:default; }
+  .cal .n { display:inline-block; min-width:18px; text-align:center; border-radius:9px; }
+  .cal .sun .n, .cal .dow:first-child { color:var(--red); }
+  .cal .today .n { background:var(--accent); color:#fff; }
+  .cal .sel { background:#eef4ff; }
+  .ev { display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; border-radius:3px; padding:0 3px; margin-top:2px; color:#fff; font-size:10.5px; }
+  .ev.trip { background:#2f6fec; } .ev.act { background:#7048e8; } .ev.sch { background:#2b8a3e; } .ev.urg { background:#d6336c; } .ev.end { background:#e8590c; }
+  .ev.off, .off { opacity:.4; text-decoration:line-through; }
+  .legend { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+  .legend .ev, .item .ev { display:inline-block; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px; margin-bottom:16px; }
+  .card h2 { font-size:15px; margin:0 0 12px; }
+  .item { border-top:1px solid var(--line); padding:10px 0; }
+  .item:first-of-type { border-top:0; }
+  .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .name { font-weight:600; }
+  .small { font-size:12px; color:var(--sub); margin-top:3px; }
+  .small ul { margin:3px 0 0; padding-left:16px; }
+  .tag { font-size:11px; background:#eef1f6; color:#4a5670; padding:2px 6px; border-radius:4px; }
+  .dday { margin-left:auto; font-weight:700; color:var(--accent); }
+  .dday.near { color:var(--warn); }
+  .badge { font-size:12px; padding:3px 8px; border-radius:12px; cursor:pointer; user-select:none; }
+  .badge.warn { background:#fff0e6; color:var(--warn); border:1px solid #ffc9a8; }
+  .badge.step { background:#e8f0ff; color:var(--accent); border:1px solid #b9cffb; }
+  .badge input { margin:0 4px 0 0; vertical-align:-2px; }
+  .done { font-size:12px; color:#9aa; }
+  .ic { display:inline-block; width:18px; height:18px; line-height:18px; text-align:center; border-radius:4px; color:#fff; font-size:11px; font-weight:700; }
+  .ic.P { background:#7048e8; } .ic.N { background:#868e96; }
+  .urgent { color:var(--red); font-weight:700; }
+  .stats { background:#f8f9fb; border-radius:8px; padding:10px 12px; margin-bottom:10px; line-height:1.8; }
+  .empty { color:var(--sub); font-size:13px; }
+  form { display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:10px 14px; }
+  form label { display:flex; flex-direction:column; gap:4px; font-size:12px; color:#555; }
+  form label.chk { flex-direction:row; align-items:center; gap:6px; }
+  form .wide { grid-column:1/-1; }
+  input, select, textarea { font:inherit; padding:6px 8px; border:1px solid #ccd; border-radius:6px; background:#fff; }
+  textarea { min-height:60px; }
+  .btns { grid-column:1/-1; display:flex; gap:8px; }
+  button.p { background:var(--accent); color:#fff; border:0; padding:8px 16px; border-radius:6px; cursor:pointer; }
+  button.s { background:#fff; border:1px solid #ccd; padding:4px 10px; border-radius:6px; cursor:pointer; font-size:12px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th, td { text-align:left; padding:7px 6px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { color:#555; font-weight:600; background:#fafbfc; }
+  td.act { white-space:nowrap; }
+  body:not([data-auth="in"]) nav, body:not([data-auth="in"]) #logout, body:not([data-auth="in"]) main > section { display:none !important; }
+  body[data-auth="out"] #login { display:grid !important; }
+  body[data-auth] #loading { display:none; }
+  @media (max-width:600px) {
+    header { padding-left:12px; padding-right:12px; gap:8px; }
+    main { padding:12px; }
+    input, select, textarea { font-size:16px; } /* iOS 입력 시 자동 확대 방지 */
+    .badge { padding:6px 10px; }
+    .cal > div { min-height:60px; padding:2px 1px; }
+    .ev { font-size:9px; padding:0 2px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>연구실 비서</h1>
+  <nav>
+    <button data-tab="dash" class="on">대시보드</button>
+    <button data-tab="projects">연구과제</button>
+    <button data-tab="trips">출장</button>
+    <button data-tab="activities">외부활동</button>
+    <button data-tab="schedules">주요업무일정</button>
+  </nav>
+  <button id="logout" class="s" onclick="logout()">로그아웃</button>
+</header>
+<main>
+<div id="loading" class="empty">불러오는 중…</div>
+<form id="login" class="card" style="max-width:360px;margin:40px auto;display:none">
+  <h2 class="wide">로그인</h2>
+  <label class="wide">이메일<input type="email" name="email" autocomplete="username" required></label>
+  <label class="wide">비밀번호<input type="password" name="password" autocomplete="current-password" required></label>
+  <div id="login-msg" class="wide urgent"></div>
+  <div class="btns"><button class="p">로그인</button></div>
+</form>
+
+<!-- 대시보드 -->
+<section id="dash" class="on">
+  <div class="card">
+    <div class="row"><h2 id="cal-title" style="margin:0"></h2>
+      <span style="margin-left:auto"><button class="s" onclick="moveMonth(-1)">‹</button> <button class="s" onclick="moveMonth(0)">오늘</button> <button class="s" onclick="moveMonth(1)">›</button></span></div>
+    <div id="cal" class="cal"></div>
+    <div class="legend"><span class="ev trip">출장</span><span class="ev act">외부활동</span><span class="ev sch">일정</span><span class="ev urg">긴급일정</span><span class="ev end">과제종료</span></div>
+    <div id="cal-day" style="margin-top:10px"></div>
+  </div>
+  <div class="grid">
+    <div class="card"><h2>연구과제 현황</h2><div id="d-projects"></div></div>
+    <div class="card"><h2>주요업무일정</h2><div id="d-schedules"></div></div>
+    <div class="card"><h2>출장 일정</h2><div id="d-trips"></div></div>
+    <div class="card"><h2>외부활동</h2><div id="d-stats" class="stats"></div><div id="d-activities"></div></div>
+  </div>
+  <div class="card"><h2>데이터 백업</h2>
+    <div class="small" style="margin-bottom:8px">데이터는 클라우드(Firebase)에 저장되어 모든 기기에 실시간 반영됩니다. 만일을 위해 가끔 백업 파일을 저장해 두세요.</div>
+    <div class="row"><button class="s" onclick="backup()">백업 파일 저장</button>
+      <label class="s" style="border:1px solid #ccd;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer">백업에서 복원<input type="file" accept=".json,application/json" hidden onchange="restore(this)"></label></div>
+  </div>
+</section>
+
+<!-- 연구과제 -->
+<section id="projects">
+  <div class="card"><h2>연구과제 등록 / 수정</h2>
+  <form data-col="projects">
+    <input type="hidden" name="id">
+    <label class="wide">과제명<input name="name" required></label>
+    <label>유형<select name="type" required>
+      <optgroup label="원내과제"><option>원내-기획</option><option>원내-정책기본</option><option>원내-현안</option><option>원내-자문성</option></optgroup>
+      <optgroup label="수탁과제"><option>수탁-학술</option><option>수탁-보조금</option></optgroup>
+    </select></label>
+    <label>시작일<input type="date" name="start" required></label>
+    <label>종료일<input type="date" name="end" required></label>
+    <label>예산(원)<input type="number" name="budget" min="0"></label>
+    <label class="wide">연구진<input name="members" placeholder="예: 홍길동(책임), 김철수"></label>
+    <label class="chk"><input type="checkbox" name="midDone">중간심의 완료</label>
+    <label class="chk"><input type="checkbox" name="finalDone">최종심의 완료</label>
+    <div class="btns"><button class="p">저장</button><button type="reset" class="s">새로 작성</button></div>
+  </form></div>
+  <div class="card"><h2>연구과제 목록</h2><div id="l-projects"></div></div>
+</section>
+
+<!-- 출장 -->
+<section id="trips">
+  <div class="card"><h2>출장 등록 / 수정</h2>
+  <form data-col="trips">
+    <input type="hidden" name="id">
+    <label class="wide">출장명<input name="name" required></label>
+    <label>해당과제<select name="projectId" id="projectSelect"></select></label>
+    <label>일시<input type="datetime-local" name="date" required></label>
+    <label>대상<input name="target"></label>
+    <label>장소<input name="place"></label>
+    <label>진행단계<select name="step"><option value="0">출장신청</option><option value="1">출장보고</option><option value="2">지급결의서</option><option value="3">완료</option></select></label>
+    <label class="wide">주요내용<textarea name="content"></textarea></label>
+    <div class="btns"><button class="p">저장</button><button type="reset" class="s">새로 작성</button></div>
+  </form></div>
+  <div class="card"><h2>출장 목록</h2><div id="l-trips"></div></div>
+</section>
+
+<!-- 외부활동 -->
+<section id="activities">
+  <div class="card"><h2>외부활동 등록 / 수정</h2>
+  <form data-col="activities">
+    <input type="hidden" name="id">
+    <label class="wide">활동명<input name="name" required></label>
+    <label>일자<input type="date" name="date" required></label>
+    <label>방식<select name="mode"><option>대면</option><option>서면</option></select></label>
+    <label>기관<select name="org"><option>국가지자체</option><option>공공기관등</option></select></label>
+    <label>유형<select name="kind"><option>자문</option><option>심의</option><option>발표</option><option>토론</option><option>기타</option></select></label>
+    <label>금액(원)<input type="number" name="amount" min="0" value="0"></label>
+    <label>교통비(원)<input type="number" name="transport" min="0" value="0"></label>
+    <label>진행단계<select name="step"><option value="0">외부활동신청</option><option value="1">출장신청</option><option value="2">출장보고</option><option value="3">완료</option></select></label>
+    <label class="chk"><input type="checkbox" name="ppt">발표자료 작성</label>
+    <div class="btns"><button class="p">저장</button><button type="reset" class="s">새로 작성</button></div>
+  </form></div>
+  <div class="card"><h2>외부활동 목록</h2><div id="l-activities"></div></div>
+</section>
+
+<!-- 주요업무일정 -->
+<section id="schedules">
+  <div class="card"><h2>주요업무일정 등록 / 수정</h2>
+  <form data-col="schedules">
+    <input type="hidden" name="id">
+    <label class="wide">일정명<input name="name" required></label>
+    <label>일자<input type="date" name="date" required></label>
+    <label>대상자<input name="target"></label>
+    <label class="chk"><input type="checkbox" name="urgent">긴급</label>
+    <label class="wide">주요내용<textarea name="content"></textarea></label>
+    <div class="btns"><button class="p">저장</button><button type="reset" class="s">새로 작성</button></div>
+  </form></div>
+  <div class="card"><h2>진행 중</h2><div id="l-schedules"></div></div>
+  <div class="card"><h2>완료 목록</h2><div id="l-schedules-done"></div></div>
+</section>
+
+</main>
+<script>
+const TRIP_STEPS = ['출장신청', '출장보고', '지급결의서'];
+const ACT_STEPS = ['외부활동신청', '출장신청', '출장보고'];
+let DB = { projects: [], trips: [], activities: [], schedules: [] };
+
+// ---------- 순수 계산 함수 ----------
+function todayStr(d = new Date()) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+function dday(end, today) { return Math.round((Date.parse(end) - Date.parse(today)) / 86400000); }
+function ddayText(n) { return n > 0 ? `D-${n}` : n === 0 ? 'D-Day' : `종료 +${-n}일`; }
+// 표시할 심의: 종료 30일 전부터 '중간', 중간 완료 후 '최종', 둘 다 완료면 없음
+function reviewState(p, today) {
+  if (!p.midDone) return dday(p.end, today) <= 30 ? 'mid' : null;
+  return p.finalDone ? null : 'final';
+}
+function actStats(acts, today) {
+  const y = today.slice(0, 4), m = today.slice(0, 7), s = { yGov: 0, yEtc: 0, mGov: 0, mEtc: 0, amount: 0, transport: 0 };
+  for (const a of acts) {
+    if (!a.date.startsWith(y)) continue;
+    const gov = a.org === '국가지자체';
+    gov ? s.yGov++ : s.yEtc++;
+    if (a.date.startsWith(m)) gov ? s.mGov++ : s.mEtc++;
+    s.amount += Number(a.amount) || 0;
+    s.transport += Number(a.transport) || 0;
+  }
+  return s;
+}
+// 달력에 표시할 모든 일정 (완료 건 포함, 완료는 흐리게)
+function calEvents(db) {
+  return [
+    ...db.trips.map(t => ({ date: t.date.slice(0, 10), kind: '출장', cls: 'trip', text: t.name, done: t.step >= 3 })),
+    ...db.activities.map(a => ({ date: a.date, kind: '외부활동', cls: 'act', text: a.name, done: a.step >= 3 })),
+    ...db.schedules.map(x => ({ date: x.date, kind: x.urgent ? '긴급일정' : '일정', cls: x.urgent ? 'urg' : 'sch', text: x.name, done: x.done })),
+    ...db.projects.map(p => ({ date: p.end, kind: '과제종료', cls: 'end', text: p.name, done: p.finalDone })),
+  ].sort((a, b) => a.done - b.done);
+}
+function selfTest() {
+  const ev = calEvents({ trips: [{ date: '2026-09-25T10:00', name: 'T', step: 3 }], activities: [], schedules: [{ date: '2026-09-25', name: 'S', urgent: true, done: false }], projects: [] });
+  console.assert(ev.length === 2 && ev[0].text === 'S' && ev[0].cls === 'urg' && ev[1].date === '2026-09-25' && ev[1].done);
+  console.assert(dday('2026-10-21', '2026-09-21') === 30);
+  console.assert(reviewState({ end: '2026-11-30' }, '2026-09-21') === null);
+  console.assert(reviewState({ end: '2026-10-21' }, '2026-09-21') === 'mid');
+  console.assert(reviewState({ end: '2026-10-21', midDone: true }, '2026-09-21') === 'final');
+  console.assert(reviewState({ end: '2026-10-21', midDone: true, finalDone: true }, '2026-09-21') === null);
+  const s = actStats([
+    { date: '2026-09-01', org: '국가지자체', amount: 300000, transport: 20000 },
+    { date: '2026-09-10', org: '공공기관등', amount: 0, transport: 5000 },
+    { date: '2026-03-01', org: '국가지자체', amount: 100000, transport: 0 },
+    { date: '2025-09-01', org: '국가지자체', amount: 999, transport: 999 },
+  ], '2026-09-21');
+  console.assert(JSON.stringify(s) === JSON.stringify({ yGov: 2, yEtc: 1, mGov: 1, mEtc: 1, amount: 400000, transport: 25000 }), s);
+  return 'selfTest done (실패 시 위에 Assertion failed 표시)';
+}
+
+// ---------- 저장 (Firebase, 아래 module 스크립트가 cloudSave/onCloudData 연결) ----------
+const validDB = d => d && typeof d === 'object' && ['projects', 'trips', 'activities', 'schedules'].every(k => Array.isArray(d[k]));
+function onCloudData(d) { DB = validDB(d) ? d : { projects: [], trips: [], activities: [], schedules: [] }; render(); }
+function save() {
+  window.cloudSave(JSON.parse(JSON.stringify(DB))).catch(e => alert('저장 실패! ' + e.message));
+  render();
+}
+async function backup() {
+  const file = new File([JSON.stringify(DB, null, 1)], `연구실비서-백업-${todayStr()}.json`, { type: 'application/json' });
+  if (navigator.canShare?.({ files: [file] })) return navigator.share({ files: [file] }).catch(() => {});
+  const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(file), download: file.name });
+  a.click();
+}
+async function restore(input) {
+  const f = input.files[0];
+  input.value = '';
+  if (!f) return;
+  try {
+    const d = JSON.parse(await f.text());
+    if (!validDB(d)) throw new Error('백업 파일 형식이 아닙니다.');
+    if (confirm('현재 데이터를 백업 파일 내용으로 바꿀까요?')) { DB = d; save(); }
+  } catch (e) { alert('복원 실패: ' + e.message); }
+}
+
+// ---------- 유틸 ----------
+const $ = s => document.querySelector(s);
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const won = n => (Number(n) || 0).toLocaleString('ko-KR') + '원';
+const fmtDate = d => esc(String(d || '').replace('T', ' '));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+const find = (col, id) => DB[col].find(x => x.id === id);
+const projName = id => (find('projects', id) || {}).name || '-';
+const empty = msg => `<div class="empty">${msg}</div>`;
+const byDate = (a, b) => (a.date || '').localeCompare(b.date || '');
+
+// ---------- 대시보드 액션 ----------
+function setFlag(col, id, key) { find(col, id)[key] = true; save(); }
+function nextStep(col, id) { find(col, id).step++; save(); }
+function doneSchedule(id) { Object.assign(find('schedules', id), { done: true, doneAt: todayStr() }); save(); }
+function undoSchedule(id) { Object.assign(find('schedules', id), { done: false, doneAt: '' }); save(); }
+function del(col, id) { if (confirm('삭제할까요?')) { DB[col] = DB[col].filter(x => x.id !== id); save(); } }
+function addTask(pid) {
+  const inp = document.getElementById('task-' + pid);
+  if (!inp.value.trim()) return;
+  find('projects', pid).tasks.push({ id: uid(), text: inp.value.trim() });
+  save();
+}
+function delTask(pid, tid) { const p = find('projects', pid); p.tasks = p.tasks.filter(t => t.id !== tid); save(); }
+
+const stepBadge = (col, x, steps) =>
+  steps.slice(0, x.step).map(s => `<span class="done">✓${s}</span>`).join(' ') +
+  ` <label class="badge step"><input type="checkbox" onchange="nextStep('${col}','${x.id}')">${steps[x.step]}</label>`;
+const icons = a => (a.ppt ? '<span class="ic P" title="발표자료 작성">P</span> ' : '') + (Number(a.amount) === 0 ? '<span class="ic N" title="무보수">N</span> ' : '');
+
+// ---------- 달력 ----------
+let calMonth = todayStr().slice(0, 7), selDay = todayStr();
+function moveMonth(d) {
+  if (d === 0) { calMonth = todayStr().slice(0, 7); selDay = todayStr(); }
+  else { const [y, m] = calMonth.split('-').map(Number); calMonth = todayStr(new Date(y, m - 1 + d, 1)).slice(0, 7); }
+  render();
+}
+function pickDay(d) { selDay = d; render(); }
+function renderCalendar(today) {
+  const [y, m] = calMonth.split('-').map(Number), byDay = {};
+  for (const e of calEvents(DB)) (byDay[e.date] ||= []).push(e);
+  const cells = ['일', '월', '화', '수', '목', '금', '토'].map(d => `<div class="dow">${d}</div>`);
+  const lead = new Date(y, m - 1, 1).getDay(), days = new Date(y, m, 0).getDate();
+  for (let i = 0; i < lead; i++) cells.push('<div class="blank"></div>');
+  for (let d = 1; d <= days; d++) {
+    const ds = `${calMonth}-${String(d).padStart(2, '0')}`, evs = byDay[ds] || [], wd = (lead + d - 1) % 7;
+    cells.push(`<div class="${wd === 0 ? 'sun' : ''} ${ds === today ? 'today' : ''} ${ds === selDay ? 'sel' : ''}" onclick="pickDay('${ds}')">
+      <span class="n">${d}</span>${evs.slice(0, 3).map(e => `<span class="ev ${e.cls} ${e.done ? 'off' : ''}">${esc(e.text)}</span>`).join('')}
+      ${evs.length > 3 ? `<span class="small">+${evs.length - 3}</span>` : ''}</div>`);
+  }
+  $('#cal-title').textContent = `${y}년 ${m}월`;
+  $('#cal').innerHTML = cells.join('');
+  const sel = byDay[selDay] || [];
+  $('#cal-day').innerHTML = `<div class="small" style="font-weight:600">${selDay}</div>` + (sel.map(e =>
+    `<div class="item row"><span class="ev ${e.cls} ${e.done ? 'off' : ''}">${e.kind}</span><span class="${e.done ? 'off' : ''}">${esc(e.text)}</span></div>`).join('') || empty('일정 없음'));
+}
+
+// ---------- 렌더 ----------
+function render() {
+  const today = todayStr();
+  renderCalendar(today);
+
+  // 과제 현황
+  const projs = DB.projects.filter(p => !(p.finalDone && dday(p.end, today) < 0)).sort((a, b) => a.end.localeCompare(b.end));
+  $('#d-projects').innerHTML = projs.map(p => {
+    const n = dday(p.end, today), rs = reviewState(p, today);
+    const badge = rs === 'mid' ? `<label class="badge warn"><input type="checkbox" onchange="setFlag('projects','${p.id}','midDone')">중간심의 필요</label>`
+                : rs === 'final' ? `<label class="badge warn"><input type="checkbox" onchange="setFlag('projects','${p.id}','finalDone')">최종심의 필요</label>` : '';
+    return `<div class="item">
+      <div class="row"><span class="name">${esc(p.name)}</span><span class="tag">${esc(p.type)}</span>${badge}<span class="dday ${n <= 30 ? 'near' : ''}">${ddayText(n)}</span></div>
+      ${p.tasks.length ? `<div class="small"><ul>${p.tasks.map(t => `<li>${esc(t.text)}</li>`).join('')}</ul></div>` : ''}
+      <div class="small">${esc(p.start)} ~ ${esc(p.end)} · 연구진 ${esc(p.members) || '-'} · 예산 ${won(p.budget)}</div>
+    </div>`;
+  }).join('') || empty('진행 중인 과제가 없습니다.');
+
+  // 출장
+  $('#d-trips').innerHTML = DB.trips.filter(t => t.step < 3).sort(byDate).map(t => `<div class="item">
+      <div class="row"><span class="name">${esc(t.name)}</span><span class="tag">${esc(projName(t.projectId))}</span></div>
+      <div class="small">${fmtDate(t.date)} · ${esc(t.place)} · 대상: ${esc(t.target)}</div>
+      ${t.content ? `<div class="small">${esc(t.content)}</div>` : ''}
+      <div class="row" style="margin-top:6px">${stepBadge('trips', t, TRIP_STEPS)}</div>
+    </div>`).join('') || empty('진행 중인 출장이 없습니다.');
+
+  // 외부활동
+  const s = actStats(DB.activities, today);
+  $('#d-stats').innerHTML = `<b>연간</b> 국가지자체 ${s.yGov}회 &nbsp;그외 ${s.yEtc}회 &nbsp;|&nbsp; <b>월간</b> 국가지자체 ${s.mGov}회 &nbsp;그외 ${s.mEtc}회<br>
+    <b>${today.slice(0, 4)}년 총 금액</b> ${won(s.amount)} &nbsp;|&nbsp; <b>교통비 합계</b> ${won(s.transport)}`;
+  $('#d-activities').innerHTML = DB.activities.filter(a => a.step < 3).sort(byDate).map(a => `<div class="item">
+      <div class="row">${icons(a)}<span class="name">${esc(a.name)}</span><span class="tag">${esc(a.kind)}</span><span class="tag">${esc(a.mode)}</span><span class="tag">${esc(a.org)}</span></div>
+      <div class="small">${esc(a.date)} · 금액 ${won(a.amount)} · 교통비 ${won(a.transport)}</div>
+      <div class="row" style="margin-top:6px">${stepBadge('activities', a, ACT_STEPS)}</div>
+    </div>`).join('') || empty('진행 중인 외부활동이 없습니다.');
+
+  // 주요업무일정 (긴급 먼저, 그 다음 일자순)
+  const sch = DB.schedules.filter(x => !x.done).sort((a, b) => (b.urgent - a.urgent) || byDate(a, b));
+  $('#d-schedules').innerHTML = sch.map(x => `<div class="item">
+      <div class="row"><label class="badge step"><input type="checkbox" onchange="doneSchedule('${x.id}')">완료</label>
+        ${x.urgent ? '<span class="urgent">[긴급]</span>' : ''}<span class="name">${esc(x.name)}</span><span class="dday ${dday(x.date, today) <= 3 ? 'near' : ''}">${esc(x.date)}</span></div>
+      <div class="small">대상자: ${esc(x.target) || '-'}${x.content ? ' · ' + esc(x.content) : ''}</div>
+    </div>`).join('') || empty('예정된 일정이 없습니다.');
+
+  // 목록 탭
+  const acts = (col, x) => `<td class="act"><button class="s" onclick="edit('${col}','${x.id}')">수정</button> <button class="s" onclick="del('${col}','${x.id}')">삭제</button></td>`;
+  const table = (heads, rows) => rows.length ? `<div class="tw"><table><tr>${heads.map(h => `<th>${h}</th>`).join('')}<th></th></tr>${rows.join('')}</table></div>` : empty('등록된 항목이 없습니다.');
+
+  $('#l-projects').innerHTML = table(['과제명', '유형', '기간', '연구진', '예산', '심의', '주요업무'], DB.projects.map(p => `<tr>
+    <td>${esc(p.name)}</td><td>${esc(p.type)}</td><td>${esc(p.start)} ~ ${esc(p.end)}</td><td>${esc(p.members)}</td><td>${won(p.budget)}</td>
+    <td>중간 ${p.midDone ? '✓' : '-'} / 최종 ${p.finalDone ? '✓' : '-'}</td>
+    <td>${p.tasks.map(t => `<div>${esc(t.text)} <button class="s" onclick="delTask('${p.id}','${t.id}')">✕</button></div>`).join('')}
+      <div class="row" style="margin-top:4px"><input id="task-${p.id}" placeholder="주요업무 추가" onkeydown="if(event.key==='Enter')addTask('${p.id}')"><button class="s" onclick="addTask('${p.id}')">추가</button></div></td>
+    ${acts('projects', p)}</tr>`));
+
+  $('#l-trips').innerHTML = table(['출장명', '해당과제', '일시', '대상', '장소', '주요내용', '단계'], [...DB.trips].sort(byDate).map(t => `<tr>
+    <td>${esc(t.name)}</td><td>${esc(projName(t.projectId))}</td><td>${fmtDate(t.date)}</td><td>${esc(t.target)}</td><td>${esc(t.place)}</td><td>${esc(t.content)}</td>
+    <td>${TRIP_STEPS[t.step] || '완료'}</td>${acts('trips', t)}</tr>`));
+
+  $('#l-activities').innerHTML = table(['활동명', '일자', '방식', '기관', '유형', '금액', '교통비', '단계'], [...DB.activities].sort(byDate).map(a => `<tr>
+    <td>${icons(a)}${esc(a.name)}</td><td>${esc(a.date)}</td><td>${esc(a.mode)}</td><td>${esc(a.org)}</td><td>${esc(a.kind)}</td><td>${won(a.amount)}</td><td>${won(a.transport)}</td>
+    <td>${ACT_STEPS[a.step] || '완료'}</td>${acts('activities', a)}</tr>`));
+
+  const schRow = x => `<tr><td>${x.urgent ? '<span class="urgent">[긴급]</span> ' : ''}${esc(x.name)}</td><td>${esc(x.date)}</td><td>${esc(x.target)}</td><td>${esc(x.content)}</td>`;
+  $('#l-schedules').innerHTML = table(['일정명', '일자', '대상자', '주요내용'], DB.schedules.filter(x => !x.done).sort(byDate).map(x => schRow(x) + acts('schedules', x) + '</tr>'));
+  $('#l-schedules-done').innerHTML = table(['일정명', '일자', '대상자', '주요내용', '완료일'], DB.schedules.filter(x => x.done).sort((a, b) => b.doneAt.localeCompare(a.doneAt)).map(x =>
+    schRow(x) + `<td>${esc(x.doneAt)}</td><td class="act"><button class="s" onclick="undoSchedule('${x.id}')">복원</button> <button class="s" onclick="del('schedules','${x.id}')">삭제</button></td></tr>`));
+
+  // 출장 폼의 과제 선택지
+  const sel = $('#projectSelect'), prev = sel.value;
+  sel.innerHTML = '<option value="">(선택 안 함)</option>' + DB.projects.map(p => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
+  sel.value = prev;
+}
+
+// ---------- 폼 ----------
+function edit(col, id) {
+  const f = document.querySelector(`form[data-col="${col}"]`), x = find(col, id);
+  for (const el of f.elements) {
+    if (!el.name) continue;
+    if (el.type === 'checkbox') el.checked = !!x[el.name];
+    else el.value = x[el.name] ?? '';
+  }
+  f.scrollIntoView({ behavior: 'smooth' });
+}
+document.querySelectorAll('form[data-col]').forEach(f => {
+  f.addEventListener('reset', () => { f.elements.namedItem('id').value = ''; });
+  f.addEventListener('submit', e => {
+    e.preventDefault();
+    const col = f.dataset.col, o = {};
+    for (const el of f.elements) {
+      if (!el.name) continue;
+      o[el.name] = el.type === 'checkbox' ? el.checked : (el.type === 'number' || el.name === 'step') ? Number(el.value || 0) : el.value;
+    }
+    if (o.id) Object.assign(find(col, o.id), o);
+    else {
+      o.id = uid();
+      if (col === 'projects') o.tasks = [];
+      if (col === 'schedules') Object.assign(o, { done: false, doneAt: '' });
+      DB[col].push(o);
+    }
+    f.reset();
+    save();
+  });
+});
+
+// ---------- 탭 ----------
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('nav button, section').forEach(x => x.classList.remove('on'));
+  b.classList.add('on');
+  document.getElementById(b.dataset.tab).classList.add('on');
+});
+
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+</script>
+<script type="module">
+// Firebase 콘솔 > 프로젝트 설정 > 내 앱(웹) 의 firebaseConfig 값을 붙여넣기
+const firebaseConfig = {
+  apiKey: 'AIzaSyCdclMCxC_rRkvVy-iVbV1hAMnERBbMiLg',
+  authDomain: 'lab-assist-gni316.firebaseapp.com',
+  projectId: 'lab-assist-gni316',
+  appId: '1:674979343459:web:e852ede4fc3c5721d45c56',
+};
+const V = 'https://www.gstatic.com/firebasejs/12.19.0/';
+const { initializeApp } = await import(V + 'firebase-app.js');
+const { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } = await import(V + 'firebase-auth.js');
+const { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, onSnapshot, setDoc } = await import(V + 'firebase-firestore.js');
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+// 오프라인 캐시: 인터넷이 끊겨도 읽기/쓰기 가능, 연결되면 자동 동기화
+const fs = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
+let ref = null, unsub = null;
+
+// ponytail: 전체 데이터를 문서 1개(최대 1MB, 수천 건)로 저장 — 넘치면 컬렉션별 문서로 분리
+onAuthStateChanged(auth, user => {
+  unsub?.();
+  document.body.dataset.auth = user ? 'in' : 'out';
+  if (!user) return;
+  ref = doc(fs, 'users', user.uid);
+  unsub = onSnapshot(ref, s => onCloudData(s.data()), e => alert('동기화 오류: ' + e.message));
+});
+window.cloudSave = d => setDoc(ref, d);
+window.logout = () => confirm('로그아웃할까요?') && signOut(auth);
+document.getElementById('login').addEventListener('submit', e => {
+  e.preventDefault();
+  const f = e.target, msg = document.getElementById('login-msg');
+  msg.textContent = '';
+  signInWithEmailAndPassword(auth, f.email.value, f.password.value).catch(err => { msg.textContent = err.code === 'auth/invalid-credential' ? '이메일 또는 비밀번호가 올바르지 않습니다.' : '로그인 실패: ' + err.code; });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+{
+  "name": "연구실 비서",
+  "short_name": "연구실 비서",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f5f6f8",
+  "theme_color": "#1f2a44",
+  "icons": [{ "src": "icon.png", "sizes": "512x512", "type": "image/png" }]
+}
